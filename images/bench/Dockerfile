@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim as bench
+FROM ubuntu:18.04 as bench
 
 LABEL author=frappé
 
@@ -15,7 +15,7 @@ RUN apt-get update \
     wget \
     # for ERPNext v12
     # TODO: Remove after v12 is deprecated
-    python2 \
+    # python2 \
     # for PDF
     libssl-dev \
     fonts-cantarell \
@@ -49,6 +49,7 @@ RUN apt-get update \
     rlwrap \
     tk8.6-dev \
     ssh-client \
+    python3-pip \
     # VSCode container requirements
     net-tools \
     && rm -rf /var/lib/apt/lists/*
@@ -60,7 +61,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
 ENV WKHTMLTOPDF_VERSION 0.12.6-1
 RUN if [ "$(uname -m)" = "aarch64" ]; then export ARCH=arm64; fi \
     && if [ "$(uname -m)" = "x86_64" ]; then export ARCH=amd64; fi \
-    && downloaded_file=wkhtmltox_$WKHTMLTOPDF_VERSION.buster_${ARCH}.deb \
+    && downloaded_file=wkhtmltox_$WKHTMLTOPDF_VERSION.bionic_${ARCH}.deb \
     && wget -q https://github.com/wkhtmltopdf/packaging/releases/download/$WKHTMLTOPDF_VERSION/$downloaded_file \
     && dpkg -i $downloaded_file \
     && rm $downloaded_file
@@ -78,16 +79,17 @@ WORKDIR /home/frappe
 # Install Python via pyenv
 # Python 3.7 sits here for ERPNext version-12
 # TODO: Remove Python 3.7 when version-12 will not be supported
-ENV PYTHON_VERSION_V12=3.7.12
-ENV PYTHON_VERSION=3.9.9
+#ENV PYTHON_VERSION_V12=3.7.12
+ENV PYTHON_VERSION=3.7.12
 ENV PYENV_ROOT /home/frappe/.pyenv
 ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
 
 # From https://github.com/pyenv/pyenv#basic-github-checkout
 RUN git clone --depth 1 https://github.com/pyenv/pyenv.git .pyenv \
-    && pyenv install $PYTHON_VERSION_V12 \
+#    && pyenv install $PYTHON_VERSION_V12 \
     && pyenv install $PYTHON_VERSION \
-    && pyenv global $PYTHON_VERSION $PYTHON_VERSION_V12 \
+#    && pyenv global $PYTHON_VERSION $PYTHON_VERSION_V12 \
+    && pyenv global $PYTHON_VERSION \
     && sed -Ei -e '/^([^#]|$)/ {a export PYENV_ROOT="/home/frappe/.pyenv" a export PATH="$PYENV_ROOT/bin:$PATH" a ' -e ':a' -e '$!{n;ba};}' ~/.profile \
     && echo 'eval "$(pyenv init --path)"' >>~/.profile \
     && echo 'eval "$(pyenv init -)"' >>~/.bashrc
